@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody rb;
     private float xRotation = 0f;
     private float yRotation = 0f;
+    private bool isCursorLocked = true;
 
     void Start()
     {
@@ -20,14 +21,37 @@ public class PlayerMovement : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.freezeRotation = true; 
 
-        Cursor.lockState = CursorLockMode.Locked;
+        LockCursor();
     }
 
     void Update()
     {
-        yRotation += Input.GetAxis("Mouse X") * mouseSensitivity;
-        xRotation -= Input.GetAxis("Mouse Y") * mouseSensitivity;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isCursorLocked)
+            {
+                UnlockCursor();
+            }
+            else
+            {
+                LockCursor();
+            }
+        }
+
+        if (!isCursorLocked && Input.GetMouseButtonDown(0))
+        {
+            if (!UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                LockCursor();
+            }
+        }
+
+        if (isCursorLocked)
+        {
+            yRotation += Input.GetAxis("Mouse X") * mouseSensitivity;
+            xRotation -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+            xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -53,11 +77,32 @@ public class PlayerMovement : MonoBehaviour
         }
 
         rb.linearVelocity = new Vector3(moveDir.x * moveSpeed, verticalAdjust, moveDir.z * moveSpeed);
-        rb.MoveRotation(Quaternion.Euler(0f, yRotation, 0f));
+        
+        if (isCursorLocked)
+        {
+            rb.MoveRotation(Quaternion.Euler(0f, yRotation, 0f));
+        }
     }
 
     void LateUpdate()
     {
-        playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        if (isCursorLocked)
+        {
+            playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        }
+    }
+
+    void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        isCursorLocked = true;
+    }
+
+    void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        isCursorLocked = false;
     }
 }
